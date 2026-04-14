@@ -6,6 +6,8 @@
 All files        |   95.48% Stmts | 90.69% Branch | 93.1% Funcs | 95.74% Lines
 ```
 
+![Coverage Report](./task-api/image.png)
+
 59 tests passing across unit tests (`taskService.test.js`) and integration tests (`routes.test.js`).
 
 ---
