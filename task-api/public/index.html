@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task Manager API — Interactive Docs</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f172a; color: #e2e8f0; min-height: 100vh; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 32px 20px; }
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 { font-size: 2.2rem; font-weight: 700; background: linear-gradient(135deg, #38bdf8, #818cf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 6px; }
+    header p { color: #94a3b8; font-size: 1rem; }
+    .badge { display: inline-block; background: #22c55e22; color: #4ade80; border: 1px solid #22c55e44; padding: 3px 12px; border-radius: 20px; font-size: 0.8rem; margin-top: 8px; }
+
+    /* Stats */
+    .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 32px; }
+    .stat-card { background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 16px; text-align: center; }
+    .stat-val { font-size: 1.8rem; font-weight: 700; }
+    .stat-lbl { color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+    .stat-todo .stat-val { color: #fbbf24; }
+    .stat-prog .stat-val { color: #38bdf8; }
+    .stat-done .stat-val { color: #4ade80; }
+    .stat-over .stat-val { color: #f87171; }
+
+    /* Panels */
+    .panel { background: #1e293b; border: 1px solid #334155; border-radius: 12px; margin-bottom: 16px; overflow: hidden; }
+    .panel-header { padding: 14px 20px; cursor: pointer; display: flex; align-items: center; gap: 12px; user-select: none; }
+    .panel-header:hover { background: #334155; }
+    .panel-body { padding: 0 20px 20px; display: none; }
+    .panel.open .panel-body { display: block; }
+    .arrow { transition: transform 0.2s; color: #64748b; }
+    .panel.open .arrow { transform: rotate(90deg); }
+
+    .method { font-weight: 700; font-size: 0.75rem; padding: 5px 12px; border-radius: 5px; font-family: 'Consolas', monospace; min-width: 64px; text-align: center; }
+    .m-get { background: #22c55e22; color: #4ade80; border: 1px solid #22c55e44; }
+    .m-post { background: #3b82f622; color: #60a5fa; border: 1px solid #3b82f644; }
+    .m-put { background: #f59e0b22; color: #fbbf24; border: 1px solid #f59e0b44; }
+    .m-delete { background: #ef444422; color: #f87171; border: 1px solid #ef444444; }
+    .m-patch { background: #a855f722; color: #c084fc; border: 1px solid #a855f744; }
+    .ep-path { font-family: 'Consolas', monospace; font-size: 0.95rem; flex: 1; }
+    .ep-desc { color: #64748b; font-size: 0.85rem; }
+
+    /* Form */
+    label { display: block; color: #94a3b8; font-size: 0.8rem; margin-bottom: 4px; margin-top: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+    input, select, textarea { width: 100%; padding: 10px 12px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; color: #e2e8f0; font-size: 0.9rem; font-family: inherit; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #818cf8; }
+    textarea { min-height: 80px; resize: vertical; font-family: 'Consolas', monospace; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .btn { padding: 10px 24px; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; margin-top: 16px; transition: opacity 0.2s; }
+    .btn:hover { opacity: 0.85; }
+    .btn-blue { background: #3b82f6; color: white; }
+    .btn-green { background: #22c55e; color: white; }
+    .btn-yellow { background: #f59e0b; color: #0f172a; }
+    .btn-red { background: #ef4444; color: white; }
+    .btn-purple { background: #a855f7; color: white; }
+
+    /* Response */
+    .response { margin-top: 16px; background: #0f172a; border: 1px solid #334155; border-radius: 8px; overflow: hidden; }
+    .res-header { padding: 8px 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; font-size: 0.8rem; }
+    .res-status { font-weight: 700; font-family: 'Consolas', monospace; }
+    .res-ok { color: #4ade80; }
+    .res-err { color: #f87171; }
+    .res-body { padding: 14px; font-family: 'Consolas', monospace; font-size: 0.85rem; white-space: pre-wrap; max-height: 300px; overflow-y: auto; line-height: 1.5; }
+
+    /* Task list */
+    .task-list { margin-top: 12px; }
+    .task-item { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; }
+    .task-item:hover { border-color: #475569; }
+    .task-title { font-weight: 600; flex: 1; }
+    .task-id { font-family: 'Consolas', monospace; font-size: 0.7rem; color: #64748b; cursor: pointer; }
+    .task-id:hover { color: #38bdf8; }
+    .task-status { font-size: 0.75rem; padding: 3px 10px; border-radius: 12px; }
+    .ts-todo { background: #fbbf2422; color: #fbbf24; }
+    .ts-in_progress { background: #38bdf822; color: #38bdf8; }
+    .ts-done { background: #4ade8022; color: #4ade80; }
+    .task-priority { font-size: 0.7rem; color: #94a3b8; }
+    .task-assignee { font-size: 0.75rem; color: #c084fc; }
+
+    /* Schema */
+    .schema { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 16px; margin-top: 12px; }
+    .schema pre { font-family: 'Consolas', monospace; font-size: 0.85rem; line-height: 1.6; }
+    .k { color: #818cf8; } .t { color: #4ade80; }
+
+    footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #334155; color: #64748b; font-size: 0.8rem; }
+    footer a { color: #818cf8; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    .loader { display: inline-block; width: 14px; height: 14px; border: 2px solid #64748b; border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; margin-right: 6px; vertical-align: middle; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+    .copy-btn { background: none; border: 1px solid #334155; color: #94a3b8; padding: 2px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem; }
+    .copy-btn:hover { border-color: #818cf8; color: #818cf8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Task Manager API</h1>
+      <p>Interactive API Documentation &amp; Testing</p>
+      <span class="badge">v1.0.0 &bull; Live</span>
+    </header>
+
+    <!-- STATS -->
+    <div class="stats-row">
+      <div class="stat-card stat-todo"><div class="stat-val" id="s-todo">-</div><div class="stat-lbl">Todo</div></div>
+      <div class="stat-card stat-prog"><div class="stat-val" id="s-prog">-</div><div class="stat-lbl">In Progress</div></div>
+      <div class="stat-card stat-done"><div class="stat-val" id="s-done">-</div><div class="stat-lbl">Done</div></div>
+      <div class="stat-card stat-over"><div class="stat-val" id="s-over">-</div><div class="stat-lbl">Overdue</div></div>
+    </div>
+
+    <!-- GET /tasks -->
+    <div class="panel open" id="p-list">
+      <div class="panel-header" onclick="toggle('p-list')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-get">GET</span>
+        <span class="ep-path">/tasks</span>
+        <span class="ep-desc">List, filter &amp; paginate tasks</span>
+      </div>
+      <div class="panel-body">
+        <div class="row">
+          <div><label>Status Filter</label><select id="f-status"><option value="">All</option><option value="todo">todo</option><option value="in_progress">in_progress</option><option value="done">done</option></select></div>
+          <div><label>Page / Limit</label><div class="row"><input id="f-page" placeholder="page" type="number" min="1"><input id="f-limit" placeholder="limit" type="number" min="1"></div></div>
+        </div>
+        <button class="btn btn-green" onclick="listTasks()">Send Request</button>
+        <div id="r-list" class="hidden"></div>
+        <div class="task-list" id="task-list"></div>
+      </div>
+    </div>
+
+    <!-- POST /tasks -->
+    <div class="panel" id="p-create">
+      <div class="panel-header" onclick="toggle('p-create')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-post">POST</span>
+        <span class="ep-path">/tasks</span>
+        <span class="ep-desc">Create a new task</span>
+      </div>
+      <div class="panel-body">
+        <label>Title *</label>
+        <input id="c-title" placeholder="e.g. Write unit tests">
+        <label>Description</label>
+        <input id="c-desc" placeholder="Optional description">
+        <div class="row">
+          <div><label>Priority</label><select id="c-priority"><option value="medium">medium</option><option value="low">low</option><option value="high">high</option></select></div>
+          <div><label>Status</label><select id="c-status"><option value="todo">todo</option><option value="in_progress">in_progress</option><option value="done">done</option></select></div>
+        </div>
+        <label>Due Date</label>
+        <input id="c-due" type="datetime-local">
+        <button class="btn btn-blue" onclick="createTask()">Create Task</button>
+        <div id="r-create"></div>
+      </div>
+    </div>
+
+    <!-- PUT /tasks/:id -->
+    <div class="panel" id="p-update">
+      <div class="panel-header" onclick="toggle('p-update')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-put">PUT</span>
+        <span class="ep-path">/tasks/:id</span>
+        <span class="ep-desc">Update a task</span>
+      </div>
+      <div class="panel-body">
+        <label>Task ID *</label>
+        <input id="u-id" placeholder="Paste task ID here (click an ID from the list above)">
+        <label>Title</label>
+        <input id="u-title" placeholder="New title">
+        <label>Description</label>
+        <input id="u-desc" placeholder="New description">
+        <div class="row">
+          <div><label>Priority</label><select id="u-priority"><option value="">unchanged</option><option value="low">low</option><option value="medium">medium</option><option value="high">high</option></select></div>
+          <div><label>Status</label><select id="u-status"><option value="">unchanged</option><option value="todo">todo</option><option value="in_progress">in_progress</option><option value="done">done</option></select></div>
+        </div>
+        <button class="btn btn-yellow" onclick="updateTask()">Update Task</button>
+        <div id="r-update"></div>
+      </div>
+    </div>
+
+    <!-- DELETE /tasks/:id -->
+    <div class="panel" id="p-delete">
+      <div class="panel-header" onclick="toggle('p-delete')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-delete">DELETE</span>
+        <span class="ep-path">/tasks/:id</span>
+        <span class="ep-desc">Delete a task</span>
+      </div>
+      <div class="panel-body">
+        <label>Task ID *</label>
+        <input id="d-id" placeholder="Paste task ID here">
+        <button class="btn btn-red" onclick="deleteTask()">Delete Task</button>
+        <div id="r-delete"></div>
+      </div>
+    </div>
+
+    <!-- PATCH /tasks/:id/complete -->
+    <div class="panel" id="p-complete">
+      <div class="panel-header" onclick="toggle('p-complete')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-patch">PATCH</span>
+        <span class="ep-path">/tasks/:id/complete</span>
+        <span class="ep-desc">Mark a task as done</span>
+      </div>
+      <div class="panel-body">
+        <label>Task ID *</label>
+        <input id="comp-id" placeholder="Paste task ID here">
+        <button class="btn btn-purple" onclick="completeTask()">Mark Complete</button>
+        <div id="r-complete"></div>
+      </div>
+    </div>
+
+    <!-- PATCH /tasks/:id/assign -->
+    <div class="panel" id="p-assign">
+      <div class="panel-header" onclick="toggle('p-assign')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-patch">PATCH</span>
+        <span class="ep-path">/tasks/:id/assign</span>
+        <span class="ep-desc">Assign a task to a user</span>
+      </div>
+      <div class="panel-body">
+        <label>Task ID *</label>
+        <input id="a-id" placeholder="Paste task ID here">
+        <label>Assignee *</label>
+        <input id="a-name" placeholder="e.g. Gokul">
+        <button class="btn btn-purple" onclick="assignTask()">Assign Task</button>
+        <div id="r-assign"></div>
+      </div>
+    </div>
+
+    <!-- GET /tasks/stats -->
+    <div class="panel" id="p-stats">
+      <div class="panel-header" onclick="toggle('p-stats')">
+        <span class="arrow">&#9654;</span>
+        <span class="method m-get">GET</span>
+        <span class="ep-path">/tasks/stats</span>
+        <span class="ep-desc">Task counts by status + overdue</span>
+      </div>
+      <div class="panel-body">
+        <button class="btn btn-green" onclick="getStats()">Get Stats</button>
+        <div id="r-stats"></div>
+      </div>
+    </div>
+
+    <!-- Schema -->
+    <div class="panel" id="p-schema">
+      <div class="panel-header" onclick="toggle('p-schema')">
+        <span class="arrow">&#9654;</span>
+        <span style="color:#94a3b8;font-weight:600;">Task Schema</span>
+      </div>
+      <div class="panel-body">
+        <div class="schema"><pre>{
+  <span class="k">"id"</span>:          <span class="t">string (uuid)</span>,
+  <span class="k">"title"</span>:       <span class="t">string</span>,
+  <span class="k">"description"</span>: <span class="t">string</span>,
+  <span class="k">"status"</span>:      <span class="t">"todo" | "in_progress" | "done"</span>,
+  <span class="k">"priority"</span>:    <span class="t">"low" | "medium" | "high"</span>,
+  <span class="k">"dueDate"</span>:     <span class="t">ISO 8601 | null</span>,
+  <span class="k">"assignee"</span>:    <span class="t">string | null</span>,
+  <span class="k">"completedAt"</span>: <span class="t">ISO 8601 | null</span>,
+  <span class="k">"createdAt"</span>:   <span class="t">ISO 8601</span>
+}</pre></div>
+      </div>
+    </div>
+
+    <footer>
+      Built by <strong>Gokul Kumar V</strong> &bull;
+      <a href="https://github.com/gokulkumarv24/Take-Home-Assignment-The-Untested-API" target="_blank">View on GitHub</a>
+    </footer>
+  </div>
+
+  <script>
+    const BASE = '';
+
+    function toggle(id) {
+      document.getElementById(id).classList.toggle('open');
+    }
+
+    function showRes(elId, status, body) {
+      const ok = status >= 200 && status < 300;
+      const el = document.getElementById(elId);
+      el.classList.remove('hidden');
+      el.innerHTML = '<div class="response">' +
+        '<div class="res-header"><span>Response</span><span class="res-status ' + (ok ? 'res-ok' : 'res-err') + '">' + status + '</span></div>' +
+        '<div class="res-body">' + escHtml(JSON.stringify(body, null, 2)) + '</div></div>';
+    }
+
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function copyId(id) {
+      navigator.clipboard.writeText(id);
+      // Auto-fill any visible ID fields
+      ['u-id','d-id','comp-id','a-id'].forEach(f => {
+        const el = document.getElementById(f);
+        if (el && !el.value) el.value = id;
+      });
+    }
+
+    function renderTasks(tasks) {
+      const el = document.getElementById('task-list');
+      if (!tasks.length) { el.innerHTML = '<div style="color:#64748b;padding:12px;">No tasks found.</div>'; return; }
+      el.innerHTML = tasks.map(t => 
+        '<div class="task-item">' +
+          '<span class="task-status ts-' + t.status + '">' + t.status + '</span>' +
+          '<span class="task-title">' + escHtml(t.title) + '</span>' +
+          (t.assignee ? '<span class="task-assignee">@' + escHtml(t.assignee) + '</span>' : '') +
+          '<span class="task-priority">' + t.priority + '</span>' +
+          '<span class="task-id" title="Click to copy &amp; auto-fill ID fields" onclick="copyId(\'' + t.id + '\')">' + t.id.slice(0,8) + '...</span>' +
+        '</div>'
+      ).join('');
+    }
+
+    async function listTasks() {
+      const status = document.getElementById('f-status').value;
+      const page = document.getElementById('f-page').value;
+      const limit = document.getElementById('f-limit').value;
+      let url = BASE + '/tasks';
+      const params = [];
+      if (status) params.push('status=' + status);
+      if (page) params.push('page=' + page);
+      if (limit) params.push('limit=' + limit);
+      if (params.length) url += '?' + params.join('&');
+
+      const res = await fetch(url);
+      const data = await res.json();
+      showRes('r-list', res.status, data);
+      renderTasks(Array.isArray(data) ? data : []);
+      refreshStats();
+    }
+
+    async function createTask() {
+      const body = { title: document.getElementById('c-title').value };
+      const desc = document.getElementById('c-desc').value;
+      const priority = document.getElementById('c-priority').value;
+      const status = document.getElementById('c-status').value;
+      const due = document.getElementById('c-due').value;
+      if (desc) body.description = desc;
+      if (priority) body.priority = priority;
+      if (status) body.status = status;
+      if (due) body.dueDate = new Date(due).toISOString();
+
+      const res = await fetch(BASE + '/tasks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const data = await res.json();
+      showRes('r-create', res.status, data);
+      if (res.ok) { document.getElementById('c-title').value = ''; document.getElementById('c-desc').value = ''; document.getElementById('c-due').value = ''; }
+      refreshStats();
+      listTasks();
+    }
+
+    async function updateTask() {
+      const id = document.getElementById('u-id').value;
+      if (!id) { alert('Please enter a Task ID'); return; }
+      const body = {};
+      const title = document.getElementById('u-title').value;
+      const desc = document.getElementById('u-desc').value;
+      const priority = document.getElementById('u-priority').value;
+      const status = document.getElementById('u-status').value;
+      if (title) body.title = title;
+      if (desc) body.description = desc;
+      if (priority) body.priority = priority;
+      if (status) body.status = status;
+
+      const res = await fetch(BASE + '/tasks/' + id, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      const data = await res.json();
+      showRes('r-update', res.status, data);
+      refreshStats();
+      listTasks();
+    }
+
+    async function deleteTask() {
+      const id = document.getElementById('d-id').value;
+      if (!id) { alert('Please enter a Task ID'); return; }
+      const res = await fetch(BASE + '/tasks/' + id, { method: 'DELETE' });
+      if (res.status === 204) { showRes('r-delete', 204, { message: 'Task deleted successfully' }); }
+      else { const data = await res.json(); showRes('r-delete', res.status, data); }
+      document.getElementById('d-id').value = '';
+      refreshStats();
+      listTasks();
+    }
+
+    async function completeTask() {
+      const id = document.getElementById('comp-id').value;
+      if (!id) { alert('Please enter a Task ID'); return; }
+      const res = await fetch(BASE + '/tasks/' + id + '/complete', { method: 'PATCH' });
+      const data = await res.json();
+      showRes('r-complete', res.status, data);
+      refreshStats();
+      listTasks();
+    }
+
+    async function assignTask() {
+      const id = document.getElementById('a-id').value;
+      const assignee = document.getElementById('a-name').value;
+      if (!id) { alert('Please enter a Task ID'); return; }
+      const res = await fetch(BASE + '/tasks/' + id + '/assign', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ assignee }) });
+      const data = await res.json();
+      showRes('r-assign', res.status, data);
+      refreshStats();
+      listTasks();
+    }
+
+    async function getStats() {
+      const res = await fetch(BASE + '/tasks/stats');
+      const data = await res.json();
+      showRes('r-stats', res.status, data);
+    }
+
+    async function refreshStats() {
+      try {
+        const res = await fetch(BASE + '/tasks/stats');
+        const d = await res.json();
+        document.getElementById('s-todo').textContent = d.todo;
+        document.getElementById('s-prog').textContent = d.in_progress;
+        document.getElementById('s-done').textContent = d.done;
+        document.getElementById('s-over').textContent = d.overdue;
+      } catch(e) {}
+    }
+
+    // Init
+    refreshStats();
+    listTasks();
+  </script>
+</body>
+</html>
