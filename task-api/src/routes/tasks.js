@@ -69,4 +69,27 @@ router.patch('/:id/complete', (req, res) => {
   res.json(task);
 });
 
+router.patch('/:id/assign', (req, res) => {
+  const { assignee } = req.body;
+
+  // Validate assignee
+  if (!assignee || typeof assignee !== 'string' || assignee.trim() === '') {
+    return res.status(400).json({ error: 'assignee is required and must be a non-empty string' });
+  }
+
+  // Check task exists
+  const existing = taskService.findById(req.params.id);
+  if (!existing) {
+    return res.status(404).json({ error: 'Task not found' });
+  }
+
+  // Don't allow assigning completed tasks
+  if (existing.status === 'done') {
+    return res.status(400).json({ error: 'Cannot assign a completed task' });
+  }
+
+  const task = taskService.assignTask(req.params.id, assignee.trim());
+  res.json(task);
+});
+
 module.exports = router;

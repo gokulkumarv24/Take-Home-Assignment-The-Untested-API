@@ -6,10 +6,10 @@ const getAll = () => [...tasks];
 
 const findById = (id) => tasks.find((t) => t.id === id);
 
-const getByStatus = (status) => tasks.filter((t) => t.status.includes(status));
+const getByStatus = (status) => tasks.filter((t) => t.status === status);
 
 const getPaginated = (page, limit) => {
-  const offset = page * limit;
+  const offset = (page - 1) * limit;
   return tasks.slice(offset, offset + limit);
 };
 
@@ -47,7 +47,9 @@ const update = (id, fields) => {
   const index = tasks.findIndex((t) => t.id === id);
   if (index === -1) return null;
 
-  const updated = { ...tasks[index], ...fields };
+  // Prevent overwriting protected fields
+  const { id: _id, createdAt: _ca, completedAt: _comp, ...safeFields } = fields;
+  const updated = { ...tasks[index], ...safeFields };
   tasks[index] = updated;
   return updated;
 };
@@ -66,7 +68,6 @@ const completeTask = (id) => {
 
   const updated = {
     ...task,
-    priority: 'medium',
     status: 'done',
     completedAt: new Date().toISOString(),
   };
@@ -80,6 +81,16 @@ const _reset = () => {
   tasks = [];
 };
 
+const assignTask = (id, assignee) => {
+  const task = findById(id);
+  if (!task) return null;
+
+  const index = tasks.findIndex((t) => t.id === id);
+  const updated = { ...task, assignee };
+  tasks[index] = updated;
+  return updated;
+};
+
 module.exports = {
   getAll,
   findById,
@@ -90,5 +101,6 @@ module.exports = {
   update,
   remove,
   completeTask,
+  assignTask,
   _reset,
 };
